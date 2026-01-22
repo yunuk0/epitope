@@ -166,34 +166,59 @@ if run and sequence_input:
     st.dataframe(df.head(20), use_container_width=True)
 
     # =============================
-    # 3D Structure visualization (3Dmol.js via CDN)
-    # =============================
+# 3D Structure visualization (robust highlight)
+# =============================
 
-    if pdb_id:
-        st.subheader("3D Structure View (Top Epitope Highlighted)")
-        pdb_id = pdb_id.lower()
-        url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-        r = requests.get(url)
+if pdb_id:
+    st.subheader("3D Structure View (Top Epitope Highlighted)")
+    pdb_id = pdb_id.lower()
+    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+    r = requests.get(url)
 
-        if r.status_code == 200:
-            pdb_str = r.text.replace("`", "")
+    if r.status_code == 200:
+        pdb_str = r.text.replace("`", "")
 
-            start = int(top.Epitope_start)
-            end = int(top.Epitope_end)
+        start = int(top.Epitope_start)
+        end = int(top.Epitope_end)
 
-            html_code = f"""
-            <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
-            <div id="viewer" style="width: 700px; height: 500px; position: relative;"></div>
-            <script>
-              let viewer = $3Dmol.createViewer("viewer", {{ backgroundColor: "white" }});
-              viewer.addModel(`{pdb_str}`, "pdb");
-              viewer.setStyle({{}}, {{cartoon: {{color: "lightgray"}}}});
-              viewer.setStyle({{resi: [{start}-{end}]}}, {{stick: {{color: "red"}}}});
-              viewer.zoomTo();
-              viewer.render();
-            </script>
-            """
+        html_code = f"""
+        <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+        <div id="viewer" style="width: 700px; height: 520px;"></div>
+        <script>
+          let viewer = $3Dmol.createViewer("viewer", {{
+            backgroundColor: "white"
+          }});
 
-            html(html_code, height=520)
-        else:
-            st.warning("Failed to load PDB structure. Please check the PDB ID.")
+          viewer.addModel(`{pdb_str}`, "pdb");
+
+          // Base structure
+          viewer.setStyle({{}}, {{
+            cartoon: {{
+              color: "lightgray",
+              thickness: 0.4
+            }}
+          }});
+
+          // Aggressive epitope highlight (visual-first)
+          viewer.setStyle({{}}, {{
+            surface: {{
+              opacity: 0.85,
+              color: "white"
+            }}
+          }});
+
+          viewer.setStyle({{
+            resi: [...Array({end}-{start}+1).keys()].map(i => i + {start})
+          }}, {{
+            cartoon: {{ color: "red" }},
+            stick: {{ color: "red", radius: 0.45 }}
+          }});
+
+          viewer.zoomTo();
+          viewer.render();
+        </script>
+        """
+
+        html(html_code, height=550)
+    else:
+        st.warning("Failed to load PDB structure. Please check the PDB ID.")
