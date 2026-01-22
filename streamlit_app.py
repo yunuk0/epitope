@@ -1,28 +1,26 @@
+# ============================================================
 # EpitopeCascade Streamlit Dashboard
-# Full-length antigen epitope screening + PDB-based 3D visualization (UI / Dummy inference)
+# Full-length antigen epitope screening + PDB 3D visualization
+# ============================================================
 
 import streamlit as st
 import numpy as np
 import pandas as pd
 import re
-from typing import List
 import requests
 from streamlit.components.v1 import html
-
-# NOTE: py3Dmol is NOT available on Streamlit Cloud by default.
-# We render 3D structures using the official 3Dmol.js CDN instead.
 
 # =============================
 # Project / Model naming
 # =============================
 PROJECT_NAME = "EpitopeCascade"
-MODEL_NAME = "Condition-aware Ensemble Cascade Model (UI / Dummy mode)"
+MODEL_NAME = "Condition-aware Ensemble Cascade Model (UI / Dummy inference)"
 
 st.set_page_config(page_title=PROJECT_NAME, layout="wide")
 
-# ======================================================
+# =============================
 # Utility functions
-# ======================================================
+# =============================
 
 def clean_sequence(seq: str) -> str:
     seq = seq.strip()
@@ -32,29 +30,29 @@ def clean_sequence(seq: str) -> str:
 
 
 def generate_epitopes(window: str, min_len=8, max_len=16):
-    epis = []
-    for l in range(min_len, max_len + 1):
-        for i in range(len(window) - l + 1):
-            epis.append((window[i:i+l], i, i+l))
-    return epis
+    out = []
+    for L in range(min_len, max_len + 1):
+        for i in range(len(window) - L + 1):
+            out.append((window[i:i+L], i, i+L))
+    return out
 
 
-# ======================================================
-# Dummy prediction logic
-# ======================================================
+# =============================
+# Dummy prediction (placeholder)
+# =============================
 
 def dummy_predict_score(epitope: str, conditions: dict) -> float:
-    base = sum(ord(a) for a in epitope) % 100 / 100
+    score = sum(ord(a) for a in epitope) % 100 / 100
     if conditions["Disease"] == "cancer":
-        base -= 0.05
+        score -= 0.05
     if conditions["Assay"] == "antibody binding":
-        base += 0.05
-    return max(0.0, min(1.0, base))
+        score += 0.05
+    return max(0.0, min(1.0, score))
 
 
-# ======================================================
+# =============================
 # Amino acid properties
-# ======================================================
+# =============================
 
 hydrophobicity = {
     "A": 1.8, "R": -4.5, "N": -3.5, "D": -3.5, "C": 2.5,
@@ -63,48 +61,38 @@ hydrophobicity = {
     "S": -0.8, "T": -0.7, "W": -0.9, "Y": -1.3, "V": 4.2
 }
 
-
-def avg_hydrophobicity(seq):
+def avg_hydro(seq):
     return float(np.mean([hydrophobicity.get(a, 0) for a in seq]))
 
 
-# ======================================================
+# =============================
 # Sidebar – Experimental conditions
-# ======================================================
+# =============================
 
 st.sidebar.title("Experimental Conditions")
 
-assay = st.sidebar.selectbox("Assay", ["antibody binding", "qualitative binding"])
-method = st.sidebar.selectbox("Method", ["Immunoassay", "high throughput"])
-disease = st.sidebar.selectbox(
-    "Disease",
-    ["disease", "healthy/exposed", "induced/medical", "native", "cancer"]
-)
-state = st.sidebar.selectbox(
-    "State",
-    ["infectious", "cancer", "autoimmune", "allergy", "healthy"]
-)
-
 conditions = {
-    "Assay": assay,
-    "Method": method,
-    "Disease": disease,
-    "State": state
+    "Assay": st.sidebar.selectbox("Assay", ["antibody binding", "qualitative binding"]),
+    "Method": st.sidebar.selectbox("Method", ["Immunoassay", "high throughput"]),
+    "Disease": st.sidebar.selectbox(
+        "Disease",
+        ["disease", "healthy/exposed", "induced/medical", "native", "cancer"]
+    ),
+    "State": st.sidebar.selectbox(
+        "State",
+        ["infectious", "cancer", "autoimmune", "allergy", "healthy"]
+    )
 }
 
-# =============================
-# Model information (display only)
-# =============================
-with st.sidebar.expander("Model information", expanded=False):
-    st.markdown("**Ensemble Cascade Model (fixed parameters)**")
-    st.slider("Recall threshold", 0.0, 1.0, 0.85, step=0.01, disabled=True)
-    st.slider("Precision threshold", 0.0, 1.0, 0.80, step=0.01, disabled=True)
-    st.slider("Alpha (ensemble weight)", 0.0, 1.0, 0.60, step=0.05, disabled=True)
+with st.sidebar.expander("Model information"):
+    st.slider("Recall threshold", 0.0, 1.0, 0.85, disabled=True)
+    st.slider("Precision threshold", 0.0, 1.0, 0.80, disabled=True)
+    st.slider("Alpha (ensemble weight)", 0.0, 1.0, 0.60, disabled=True)
 
 
-# ======================================================
+# =============================
 # Main UI
-# ======================================================
+# =============================
 
 st.title(PROJECT_NAME)
 st.caption(MODEL_NAME)
@@ -122,11 +110,12 @@ pdb_id = st.text_input(
 run = st.button("Run Epitope Screening")
 
 
-# ======================================================
-# Analysis pipeline
-# ======================================================
+# =============================
+# Analysis
+# =============================
 
 if run and sequence_input:
+
     seq = clean_sequence(sequence_input)
     st.success(f"Antigen length: {len(seq)} aa")
 
@@ -134,20 +123,24 @@ if run and sequence_input:
     window_size = 16
 
     with st.spinner("Running sliding-window epitope screening..."):
-        for w_start in range(len(seq) - window_size + 1):
-            window = seq[w_start:w_start + window_size]
+        for w in range(len(seq) - window_size + 1):
+            window = seq[w:w + window_size]
             for ep, s, e in generate_epitopes(window):
-                score = dummy_predict_score(ep, conditions)
                 records.append({
                     "Epitope": ep,
-                    "Score": score,
-                    "Epitope_start": w_start + s + 1,
-                    "Epitope_end": w_start + e,
+                    "Score": dummy_predict_score(ep, conditions),
+                    "Start": w + s + 1,
+                    "End": w + e,
                     "Length": len(ep),
-                    "Avg_hydrophobicity": avg_hydrophobicity(ep)
+                    "Avg_hydrophobicity": avg_hydro(ep)
                 })
 
-    df = pd.DataFrame(records).sort_values("Score", ascending=False)
+    df = pd.DataFrame(records).sort_values("Score", ascending=False).reset_index(drop=True)
+
+    if df.empty:
+        st.error("No epitopes generated.")
+        st.stop()
+
     top = df.iloc[0]
 
     # =============================
@@ -155,63 +148,53 @@ if run and sequence_input:
     # =============================
 
     st.subheader("Top-ranked Epitope Candidate")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Epitope", top.Epitope)
-    c2.metric("Score", f"{top.Score:.3f}")
-    c3.metric("AA position", f"{int(top.Epitope_start)} – {int(top.Epitope_end)}")
 
-    st.markdown(f"**Average hydrophobicity:** {top.Avg_hydrophobicity:.2f}")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Epitope", top["Epitope"])
+    c2.metric("Score", f"{top['Score']:.3f}")
+    c3.metric("AA position", f"{top['Start']} – {top['End']}")
+
+    st.markdown(f"**Average hydrophobicity:** {top['Avg_hydrophobicity']:.2f}")
 
     st.subheader("Top candidate epitopes")
     st.dataframe(df.head(20), use_container_width=True)
 
     # =============================
-# 3D Structure visualization (robust highlight)
-# =============================
+    # 3D Structure visualization
+    # =============================
 
-if pdb_id:
-    st.subheader("3D Structure View (Top Epitope Highlighted)")
-    pdb_id = pdb_id.lower()
-    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-    r = requests.get(url)
+    if pdb_id:
+        st.subheader("3D Structure View (Top Epitope Highlighted)")
 
-    if r.status_code == 200:
-        pdb_str = r.text.replace("`", "")
+        pdb_id = pdb_id.lower()
+        url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+        r = requests.get(url)
 
-        start = int(top.Epitope_start)
-        end = int(top.Epitope_end)
+        if r.status_code != 200:
+            st.warning("Failed to load PDB structure.")
+            st.stop()
+
+        pdb_text = r.text.replace("`", "")
+
+        start = int(top["Start"])
+        end = int(top["End"])
 
         html_code = f"""
         <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
-        <div id="viewer" style="width: 700px; height: 520px;"></div>
+        <div id="viewer" style="width: 720px; height: 520px;"></div>
         <script>
-          let viewer = $3Dmol.createViewer("viewer", {{
-            backgroundColor: "white"
-          }});
+          let viewer = $3Dmol.createViewer("viewer", {{backgroundColor: "white"}});
+          viewer.addModel(`{pdb_text}`, "pdb");
 
-          viewer.addModel(`{pdb_str}`, "pdb");
-
-          // Base structure
           viewer.setStyle({{}}, {{
-            cartoon: {{
-              color: "lightgray",
-              thickness: 0.4
-            }}
-          }});
-
-          // Aggressive epitope highlight (visual-first)
-          viewer.setStyle({{}}, {{
-            surface: {{
-              opacity: 0.85,
-              color: "white"
-            }}
+            cartoon: {{color: "lightgray", thickness: 0.4}}
           }});
 
           viewer.setStyle({{
             resi: [...Array({end}-{start}+1).keys()].map(i => i + {start})
           }}, {{
-            cartoon: {{ color: "red" }},
-            stick: {{ color: "red", radius: 0.45 }}
+            cartoon: {{color: "red"}},
+            stick: {{color: "red", radius: 0.45}}
           }});
 
           viewer.zoomTo();
@@ -219,6 +202,4 @@ if pdb_id:
         </script>
         """
 
-        html(html_code, height=550)
-    else:
-        st.warning("Failed to load PDB structure. Please check the PDB ID.")
+        html(html_code, height=560)
