@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 import re
 from typing import List, Dict
-import matplotlib.pyplot as plt
-from matplotlib import cm
 
 st.set_page_config(page_title="VaxOptiML", layout="wide")
 
@@ -109,7 +107,6 @@ if run and sequence_input:
         for i, e in enumerate(epitopes):
             prob = epitope_probability(e, mhc_class)
             results.append({
-                "Rank": i + 1,
                 "Epitope": e,
                 "Start": i + 1,
                 "End": i + epitope_length,
@@ -139,13 +136,15 @@ if run and sequence_input:
             if color_scheme == "Hydrophobicity":
                 val = hydrophobicity.get(aa, 0)
                 norm = (val + 4.5) / 9
-                c = cm.coolwarm(norm)
-                base_color = f"{int(c[0]*255)},{int(c[1]*255)},{int(c[2]*255)}"
+                r = int(255 * norm)
+                b = int(255 * (1 - norm))
+                base_color = f"{r},100,{b}"
             elif color_scheme == "Charge":
                 val = charge.get(aa, 0)
                 norm = (val + 1) / 2
-                c = cm.bwr(norm)
-                base_color = f"{int(c[0]*255)},{int(c[1]*255)},{int(c[2]*255)}"
+                r = int(255 * norm)
+                b = int(255 * (1 - norm))
+                base_color = f"{r},100,{b}"
 
             alpha = highlight[i]
             shape = "border-radius:50%;" if "Circle" in style_mode else ""
@@ -157,11 +156,7 @@ if run and sequence_input:
         st.markdown(html_seq, unsafe_allow_html=True)
 
         # =============================
-        # Probability distribution plot
+        # Probability distribution (Streamlit native)
         # =============================
         st.subheader("Epitope Probability Distribution")
-        fig, ax = plt.subplots()
-        ax.hist(df["Probability"], bins=20)
-        ax.set_xlabel("Probability")
-        ax.set_ylabel("Count")
-        st.pyplot(fig)
+        st.bar_chart(df["Probability"])
