@@ -78,6 +78,38 @@ def avg_hydrophobicity(seq):
 
 st.sidebar.title("Experimental Conditions")
 
+# =============================
+# Model information (bottom-left)
+# =============================
+with st.sidebar.expander("Model information", expanded=False):
+    st.markdown("**Ensemble Cascade Model**")
+    recall_threshold = st.slider(
+        "Recall threshold",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.85,
+        step=0.01,
+        help="Recall cutoff used in stage-1 screening"
+    )
+    precision_threshold = st.slider(
+        "Precision threshold",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.80,
+        step=0.01,
+        help="Precision cutoff used in final epitope selection"
+    )
+    alpha = st.slider(
+        "Alpha (ensemble weight)",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.60,
+        step=0.05,
+        help="Weighting factor between cascade stages"
+    )
+
+    st.caption("⚠ Parameters are displayed for transparency. Actual values are fixed in the trained ensemble cascade model.")
+
 assay = st.sidebar.selectbox(
     "Assay",
     ["antibody binding", "qualitative binding"]
