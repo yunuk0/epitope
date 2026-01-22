@@ -7,8 +7,10 @@ import pandas as pd
 import re
 from typing import List
 import requests
-import py3Dmol
 from streamlit.components.v1 import html
+
+# NOTE: py3Dmol is NOT available on Streamlit Cloud by default.
+# We render 3D structures using the official 3Dmol.js CDN instead.
 
 # =============================
 # Project / Model naming
@@ -164,7 +166,7 @@ if run and sequence_input:
     st.dataframe(df.head(20), use_container_width=True)
 
     # =============================
-    # 3D Structure visualization
+    # 3D Structure visualization (3Dmol.js via CDN)
     # =============================
 
     if pdb_id:
@@ -174,17 +176,24 @@ if run and sequence_input:
         r = requests.get(url)
 
         if r.status_code == 200:
-            pdb_str = r.text
-            view = py3Dmol.view(width=700, height=500)
-            view.addModel(pdb_str, 'pdb')
-            view.setStyle({'cartoon': {'color': 'lightgray'}})
+            pdb_str = r.text.replace("`", "")
 
-            view.setStyle(
-                {'resi': list(range(int(top.Epitope_start), int(top.Epitope_end) + 1))},
-                {'stick': {'color': 'red'}}
-            )
+            start = int(top.Epitope_start)
+            end = int(top.Epitope_end)
 
-            view.zoomTo()
-            html(view._make_html(), height=520)
+            html_code = f"""
+            <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+            <div id="viewer" style="width: 700px; height: 500px; position: relative;"></div>
+            <script>
+              let viewer = $3Dmol.createViewer("viewer", {{ backgroundColor: "white" }});
+              viewer.addModel(`{pdb_str}`, "pdb");
+              viewer.setStyle({{}}, {{cartoon: {{color: "lightgray"}}}});
+              viewer.setStyle({{resi: [{start}-{end}]}}, {{stick: {{color: "red"}}}});
+              viewer.zoomTo();
+              viewer.render();
+            </script>
+            """
+
+            html(html_code, height=520)
         else:
             st.warning("Failed to load PDB structure. Please check the PDB ID.")
