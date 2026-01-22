@@ -13,7 +13,7 @@ from streamlit.components.v1 import html
 # =============================
 # Project / Model naming
 # =============================
-PROJECT_NAME = "EpitopeCascade"
+PROJECT_NAME = "B-cell Epitope Prediction"
 MODEL_NAME = "Condition-aware Ensemble Cascade Model (UI / Dummy inference)"
 
 st.set_page_config(page_title=PROJECT_NAME, layout="wide")
