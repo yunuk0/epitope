@@ -8,7 +8,10 @@ import re
 import pickle
 from typing import List
 
-st.set_page_config(page_title="VaxOptiML", layout="wide")
+PROJECT_NAME = "EpitopeCascade"
+MODEL_NAME = "Condition-aware Ensemble Cascade Model"
+
+st.set_page_config(page_title=PROJECT_NAME, layout="wide")
 
 # ======================================================
 # Utility functions
@@ -142,8 +145,8 @@ conditions = {
 # Main UI
 # ======================================================
 
-st.title("VaxOptiML")
-st.caption("Condition-aware full-length antigen epitope prioritization")
+st.title(PROJECT_NAME)
+st.caption(MODEL_NAME)
 
 sequence_input = st.text_area(
     "Enter full-length antigen sequence (no length limit)",
