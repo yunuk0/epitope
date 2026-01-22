@@ -8,7 +8,7 @@ import re
 import pickle
 from typing import List
 
-PROJECT_NAME = "EpitopeCascade"
+PROJECT_NAME = "B-cell Linear Epitope Prediction"
 MODEL_NAME = "Condition-aware Ensemble Cascade Model"
 
 st.set_page_config(page_title=PROJECT_NAME, layout="wide")
@@ -37,60 +37,18 @@ def generate_epitopes(window: str, min_len=8, max_len=16):
 
 
 # ======================================================
-# ======================================================
-# Real model loaders (stage-wise)
+# Dummy model loader (replace with real pickle)
 # ======================================================
 
 @st.cache_resource
-def load_models():
-    with open("/mnt/data/stage1_ensemble.pkl", "rb") as f:
-        stage1_model = pickle.load(f)
-    with open("/mnt/data/stage2_mlp.pkl", "rb") as f:
-        stage2_mlp = pickle.load(f)
-    with open("/mnt/data/stage2_xgb.pkl", "rb") as f:
-        stage2_xgb = pickle.load(f)
-    with open("/mnt/data/encoder_s1.pkl", "rb") as f:
-        encoder_s1 = pickle.load(f)
-    with open("/mnt/data/encoder_s2.pkl", "rb") as f:
-        encoder_s2 = pickle.load(f)
-    return stage1_model, stage2_mlp, stage2_xgb, encoder_s1, encoder_s2
+def load_model():
+    # with open("epitope_model.pkl", "rb") as f:
+    #     model = pickle.load(f)
+    model = None  # placeholder
+    return model
 
 
-def predict_score(epitope: str, conditions: dict,
-                  stage1_model, stage2_mlp, stage2_xgb,
-                  encoder_s1, encoder_s2) -> float:
-    """
-    True cascade inference:
-    Stage 1: high-recall screening
-    Stage 2: precision re-ranking (MLP + XGB ensemble)
-    """
-
-    # -------- Stage 1 --------
-    X1 = encoder_s1.transform([epitope])
-    s1_prob = stage1_model.predict_proba(X1)[:, 1][0]
-
-    # Early rejection
-    if s1_prob < recall_threshold:
-        return 0.0
-
-    # -------- Stage 2 --------
-    # Combine epitope + experimental conditions
-    X2 = encoder_s2.transform([[epitope,
-                                conditions["Assay"],
-                                conditions["Method"],
-                                conditions["Disease"],
-                                conditions["State"]]])
-
-    p_mlp = stage2_mlp.predict_proba(X2)[:, 1][0]
-    p_xgb = stage2_xgb.predict_proba(X2)[:, 1][0]
-
-    final_score = alpha * p_mlp + (1 - alpha) * p_xgb
-
-    # Precision thresholding
-    if final_score < precision_threshold:
-        return 0.0
-
-    return final_score(epitope: str, conditions: dict) -> float:
+def predict_score(epitope: str, conditions: dict) -> float:
     # Placeholder logic – replace with model.predict
     base = sum([ord(a) for a in epitope]) % 100 / 100
     weight = 0
