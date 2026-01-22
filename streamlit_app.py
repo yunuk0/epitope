@@ -8,7 +8,7 @@ import re
 import pickle
 from typing import List
 
-PROJECT_NAME = "EpitopeCascade"
+PROJECT_NAME = "Epitope Prediction via Ensemble Cascade"
 MODEL_NAME = "Condition-aware Ensemble Cascade Model"
 
 st.set_page_config(page_title=PROJECT_NAME, layout="wide")
