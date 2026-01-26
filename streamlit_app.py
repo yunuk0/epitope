@@ -43,11 +43,9 @@ CAT_COLS = ["disease", "state", "assay", "method"]
 def load_models():
     model_s1 = joblib.load(os.path.join(MODEL_DIR, "stage1_catboost.pkl"))
     model_s2 = joblib.load(os.path.join(MODEL_DIR, "stage2_xgb.pkl"))
-    encoder = joblib.load(os.path.join(MODEL_DIR, "encoder_s2.pkl"))
-    feature_cols_s1 = joblib.load(
-        os.path.join(MODEL_DIR, "stage1_feature_columns.pkl")
-    )
-    return model_s1, model_s2, encoder, feature_cols_s1
+    encoder_s2 = joblib.load(os.path.join(MODEL_DIR, "encoder_s2.pkl"))
+    return model_s1, model_s2, encoder_s2
+
 
 
 model_s1, model_s2, encoder_s2, feature_cols_s1 = load_models()
