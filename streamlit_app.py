@@ -26,21 +26,25 @@ W1, W2 = 0.4, 0.6
 CAT_COLS = ["disease", "state", "assay", "method"]
 
 # ====================================================
-# Load models (no feature_columns.pkl required)
+# Paths (파일 위치 기준으로 고정)
+# ====================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+
+# ====================================================
+# Load models
 # ====================================================
 @st.cache_resource
-
 def load_models():
     try:
-        model_s1 = joblib.load("stage1_catboost.pkl")
-        model_s2 = joblib.load("stage2_xgb.pkl")
-        encoder_s2 = joblib.load("encoder_s2.pkl")
+        model_s1 = joblib.load(os.path.join(MODEL_DIR, "stage1_catboost.pkl"))
+        model_s2 = joblib.load(os.path.join(MODEL_DIR, "stage2_xgb.pkl"))
+        encoder_s2 = joblib.load(os.path.join(MODEL_DIR, "encoder_s2.pkl"))
         return model_s1, model_s2, encoder_s2
     except Exception as e:
         st.error(f"Model loading failed: {e}")
         st.stop()
-
-model_s1, model_s2, encoder_s2 = load_models()
+load_models()
 
 # ====================================================
 # Sidebar – controls
