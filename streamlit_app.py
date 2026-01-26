@@ -189,24 +189,22 @@ if run_btn and sequence_input:
         target_emb.reshape(1, -1),
         columns=[str(i) for i in range(target_emb.shape[0])]
     )
-
+    
+    # 2️⃣ categorical metadata
     df_cat = pd.DataFrame([{
-        "assay": assay,
-        "method": method,
         "disease": disease,
-        "state": state
+        "state": state,
+        "assay": assay,
+        "method": method
     }])
-
-    X_s1 = pd.concat([df_emb, df_cat], axis=1)
-    X_s1 = X_s1[feature_cols_s1]
-
-    prob_s1 = model_s1.predict_proba(X_s1)[0, 1]
-
-    st.metric("Stage 1 probability", f"{prob_s1:.4f}")
-
-    if prob_s1 < THRESHOLD_S1:
-        st.warning("Stage 1 filter failed (below recall threshold).")
-        st.stop()
+    
+    # 3️⃣ 🔥 바로 여기!
+    cat_cols = ["disease", "state", "assay", "method"]
+    
+    X_s1 = pd.concat(
+        [df_emb, df_cat[cat_cols]],
+        axis=1
+    )
 
     # ================= Stage 2 =================
     X_cat = encoder_s2.transform(df_cat)
