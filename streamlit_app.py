@@ -46,9 +46,7 @@ def load_models():
     encoder_s2 = joblib.load(os.path.join(MODEL_DIR, "encoder_s2.pkl"))
     return model_s1, model_s2, encoder_s2
 
-
-
-model_s1, model_s2, encoder_s2, feature_cols_s1 = load_models()
+model_s1, model_s2, encoder_s2 = load_models()
 
 # ====================================================
 # 4. Google Drive large data loader
